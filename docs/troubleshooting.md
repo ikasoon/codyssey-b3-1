@@ -57,7 +57,7 @@ aws ec2 describe-instances \
 
 ## 결과
 
-학습자가 수정 후 제공한 조회 결과:
+수정 후 조회 결과:
 
 ```json
 [

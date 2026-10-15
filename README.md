@@ -2,7 +2,7 @@
 
 서울 리전에 VPC와 Public Subnet을 구성하고 EC2에 Nginx 웹 서버를 배포했다. 외부 PC에서 `/health`에 요청해 **HTTP 200과 본문 `OK`**를 확인했다.
 
-**현재 상태:** 외부 접속 증빙 확보. 서버 내부 검증 결과 보완과 실습 리소스 정리가 남아 있다. 리소스 종료·삭제 완료 후 [정리 체크리스트](docs/cleanup-checklist.md)에 근거를 기록한다.
+**현재 상태: 생성한 실습 리소스 정리 완료.** EC2는 `terminated`, 퍼블릭 IP는 `null`이며 루트 EBS·Route Table·Subnet·Security Group·Internet Gateway·VPC·키페어는 삭제 후 조회 결과가 모두 `[]`다. 항목별 결과는 [정리 체크리스트](docs/cleanup-checklist.md)에 정리했다.
 
 ## 제출물
 
@@ -12,8 +12,7 @@
 | 외부 접속 스크린샷 | [external-health.png](docs/evidence/external-health.png) |
 | 트러블슈팅 보고서 | [troubleshooting.md](docs/troubleshooting.md) |
 | 리소스 정리 체크리스트 | [cleanup-checklist.md](docs/cleanup-checklist.md) |
-| IAM 정책과 설정 안내 | [lab-policy.json](infra/iam/lab-policy.json), [iam-setup.md](docs/iam-setup.md) |
-| 제공된 CLI 조회 결과 | [deployment-observations.json](docs/evidence/deployment-observations.json) |
+| IAM 정책 | [lab-policy.json](infra/iam/lab-policy.json) |
 
 ## 외부 접속 검증
 
@@ -42,7 +41,7 @@ OK
 
 ![로컬 PC에서 퍼블릭 IP의 health 경로에 접속해 HTTP 200과 OK를 받은 터미널 화면](docs/evidence/external-health.png)
 
-위 주소는 검증 당시 EC2에 할당된 퍼블릭 IP다. 리소스를 정리하면 서비스는 종료되며, 이 주소는 이후 다른 리소스에 재할당될 수 있다.
+위 주소는 검증 당시 EC2에 할당된 퍼블릭 IP다. EC2 종료 후 주소가 반환되어 현재 실습 서비스의 접속 주소로 사용하면 안 된다. 이후 다른 리소스에 재할당될 수 있다.
 
 ## 아키텍처와 요청 흐름
 
@@ -58,27 +57,27 @@ VPC는 분리된 네트워크 범위, Subnet은 그 안의 IP 구역이다. Rout
 
 ## 배포 구성
 
-아래 리소스 ID와 상태는 학습자가 제공한 조회 결과를 기준으로 한다.
+아래는 배포 당시 구성과 정리 후 조회 결과다.
 
 | 구성 요소 | 값 |
 |---|---|
 | 리전 / 가용 영역 | `ap-northeast-2` / `ap-northeast-2c` |
-| VPC | `vpc-02da8a937c3799359` · `10.0.0.0/16` |
-| Public Subnet | `subnet-0994c241f09fecbb1` · `10.0.1.0/24` |
-| Internet Gateway | `igw-071f5b0ea58be0c33` |
-| Route Table | `rtb-06bc2d70e1478de6d` |
-| Route Table 연결 | `rtbassoc-0233fcaadb0d0a795` · `associated` |
-| Security Group | `sg-027c54d832f751fd6` |
-| EC2 | `i-0e9ec3bf1dddb9edf` · 마지막 제공 결과 `running` |
-| 퍼블릭 / 사설 IPv4 | `52.79.233.23` / `10.0.1.80` |
+| VPC | `vpc-02da8a937c3799359` · `10.0.0.0/16` · 삭제 확인 |
+| Public Subnet | `subnet-0994c241f09fecbb1` · `10.0.1.0/24` · 삭제 확인 |
+| Internet Gateway | `igw-071f5b0ea58be0c33` · 삭제 확인 |
+| Route Table | `rtb-06bc2d70e1478de6d` · 삭제 확인 |
+| Route Table 연결 | `rtbassoc-0233fcaadb0d0a795` · 배포 당시 `associated`, 연결 대상 삭제 확인 |
+| Security Group | `sg-027c54d832f751fd6` · 삭제 확인 |
+| EC2 | `i-0e9ec3bf1dddb9edf` · 종료 후 `terminated` |
+| 배포 당시 퍼블릭 / 사설 IPv4 | `52.79.233.23` / `10.0.1.80` · 종료 후 `PublicIp: null` |
 | 선택한 인스턴스 유형 | `t3.micro` · 2 vCPU · 1,024MiB 메모리 |
 | 선택한 AMI | `ami-0c9c7f8c2c9ca580b` |
 | AMI 이름 | `al2023-ami-2023.12.20261013.0-kernel-6.12-x86_64` |
-| EBS 볼륨 | `vol-0a6a1d56710174f89` |
-| 키페어 | `codyssey-lab` · RSA · `key-0f8f3fb1511d18c5b` |
+| EBS 볼륨 | `vol-0a6a1d56710174f89` · 삭제 확인 |
+| 키페어 | `codyssey-lab` · RSA · `key-0f8f3fb1511d18c5b` · AWS 등록 삭제 확인 |
 | 웹 서버 | 응답 헤더 기준 `nginx/1.30.5` |
 
-생성 명령에는 EBS `gp3` 8GiB, `DeleteOnTermination=true`, CPU 크레딧 `standard`, IMDSv2 필수를 지정했다. 제공된 EC2 조회 출력에는 이 상세 설정이 포함되지 않아 별도 조회로 확인해야 한다. 인스턴스 유형 조회의 `FreeTierEligible=true`만으로 실제 비용이 0원임을 판단하지 않으며, 무료 플랜·크레딧 잔액과 Billing 확인이 필요하다.
+생성 명령에는 EBS `gp3` 8GiB, `DeleteOnTermination=true`, CPU 크레딧 `standard`, IMDSv2 필수를 지정했다. 저장된 EC2 조회 출력에는 이 상세 설정이 포함되지 않았으며, 현재 EC2와 볼륨은 정리됐다. 인스턴스 유형 조회의 `FreeTierEligible=true`는 실제 청구 금액을 나타내지 않는다. Billing 조회는 결제 조회 권한 부족으로 제한됐으며, 비용·크레딧 내역은 미기록이다.
 
 ## 접근 제어와 IAM
 
@@ -88,39 +87,34 @@ VPC는 분리된 네트워크 범위, Subnet은 그 안의 IP 구역이다. Rout
 | 인바운드 | TCP 22 | 학습자 공인 IPv4 `/32` | SSH 관리 |
 | 아웃바운드 | 전체 | `0.0.0.0/0` | 패키지 설치와 외부 통신 |
 
-제공된 보안 그룹 조회 결과에는 위 두 인바운드 규칙만 존재하며 전체 포트를 공개하는 인바운드 규칙은 없다. 학습자의 공인 IP가 바뀌면 SSH 규칙도 새 `/32` 주소로 갱신한다.
+보안 그룹 조회 결과에는 위 두 인바운드 규칙만 존재하며 전체 포트를 공개하는 인바운드 규칙은 없다. 학습자의 공인 IP가 바뀌면 SSH 규칙도 새 `/32` 주소로 갱신한다.
 
-Security Group은 서버로 오가는 네트워크 통신을 제어한다. IAM은 AWS API에서 리소스를 생성·조회·삭제할 수 있는 주체와 작업을 제어한다. IAM 사용자 `codyssey-lab`과 CLI 프로필 `codyssey`를 사용하도록 준비했으며 학습자가 설정과 인증 완료를 보고했다.
+Security Group은 서버로 오가는 네트워크 통신을 제어한다. IAM은 AWS API에서 리소스를 생성·조회·삭제할 수 있는 주체와 작업을 제어한다. 실습에는 IAM 사용자 `codyssey-lab`과 CLI 프로필 `codyssey`를 사용했다.
 
 - `CodysseyLabInfrastructure`: EC2/VPC 실습에 필요한 작업을 열거하고 서울 리전으로 제한한다.
 - `SignInLocalDevelopmentAccess`: `aws login`을 통한 CLI 임시 인증에 사용한다.
 - 제공한 정책에 `AdministratorAccess`, IAM 권한 관리, S3·RDS 권한은 포함하지 않는다.
 - `Resource: "*"`이므로 실습 태그나 특정 리소스 ID에만 권한을 한정하지는 않는다. 인스턴스 개수·종류·포트 제한은 실행 설정에서 관리한다.
 
-계정 최초 준비와 루트 MFA 등록 후 실습용 IAM 사용자로 전환하는 절차를 사용했다. 현재 연결된 전체 정책 목록과 인증 ARN 원문은 제출 증거에 포함되지 않았으므로 [IAM 설정 안내](docs/iam-setup.md)의 설정과 일치하는지 최종 확인한다.
+계정 최초 준비와 루트 MFA 등록 후 실습용 IAM 사용자로 전환하는 절차를 사용했다. 전체 연결 정책 목록과 인증 ARN 원문은 제출 증거에 포함되지 않았다.
 
 ## 요구사항 확인 상태
 
 | 요구사항 | 현재 근거와 상태 |
 |---|---|
-| VPC와 Public Subnet 구성 | 제공된 리소스 ID와 라우팅 조회 결과 |
+| VPC와 Public Subnet 구성 | 리소스 ID와 라우팅 조회 결과 |
 | IGW 경로와 Subnet 연결 | 인터넷 경로 `active`, 연결 `associated` 확인 |
-| EC2와 키페어 | 인스턴스 `running`, 키페어 RSA 등록 확인 |
+| EC2와 키페어 | 배포 당시 `running`과 키페어 RSA 등록 확인, 현재 EC2 종료 및 키페어 등록 삭제 확인 |
 | HTTP 공개와 SSH 소스 제한 | 보안 그룹 조회 결과 확인 |
 | Nginx 외부 응답 | 외부 `/health` 200 및 스크린샷 확보 |
-| SSH 접속, 내부 `/` 200, 인터넷 아웃바운드 | 실행 결과 보완 필요 |
-| IAM 최소권한 | 정책 파일 준비 및 설정 완료 보고, 최종 연결 정책 확인 필요 |
-| 리소스 정리 | 미완료 · 체크리스트에 삭제 후 근거 기록 필요 |
+| SSH 접속, 내부 `/` 200, 인터넷 아웃바운드 | 종료 전 실행 결과 보완 필요 · 해당 서버 재검증 불가 |
+| IAM 최소권한 | 정책 파일 및 인증 설정 완료, 최종 연결 정책 목록 미기록 |
+| 리소스 정리 | EC2 `terminated`, `PublicIp: null` · 루트 EBS·네트워크 리소스·키페어 조회 `[]` |
+| Billing 확인 (권장) | 결제 조회 권한 부족 · 청구 금액·크레딧 내역 미기록 |
 
 ### 서버 내부 검증 결과 보완
 
-리소스를 종료하기 전에 학습자가 직접 SSH로 접속한다.
-
-```bash
-ssh -i "$HOME/.ssh/codyssey-lab.pem" ec2-user@52.79.233.23
-```
-
-EC2 안에서 아래 명령을 실행하고 명령·출력·시각을 기록한다. 예상값은 성공 판정 기준이며, 아직 확보하지 않은 결과를 대신하지 않는다.
+EC2가 이미 종료되어 해당 서버에 다시 접속할 수 없다. 아래는 종료 전에 안내한 검증 명령이다. 당시 저장한 출력이나 스크린샷이 있다면 이를 추가한다. 예상값은 성공 판정 기준이며 실제 결과를 대신하지 않는다.
 
 ```bash
 date -u
@@ -137,7 +131,7 @@ curl -I --connect-timeout 10 https://example.com
 
 실제 발생한 `--query` 식별자 줄바꿈 오류를 [트러블슈팅 보고서](docs/troubleshooting.md)에 기록했다. 오류 메시지 분석, 필드명 수정, 재조회 성공까지 포함한다.
 
-검증 증빙을 확보한 뒤 [정리 체크리스트](docs/cleanup-checklist.md)의 순서로 EC2·EBS·네트워크 리소스를 정리한다. 삭제 명령과 확인 기준을 함께 제공하며, 완료 근거가 있는 항목만 체크한다.
+정리 결과의 범위는 위에 식별자를 기록한 서울 리전의 실습 리소스다. 추가 미사용 EBS·Elastic IP의 개별 조회 결과와 Billing 상세 내역은 미기록이다. NAT Gateway·ELB/ALB·RDS는 본 실습 구성에 포함되지 않는다.
 
 HTTPS와 Docker 보너스는 이번 제출 범위에 포함하지 않았다.
 
