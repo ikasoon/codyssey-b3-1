@@ -1,0 +1,32 @@
+Fri Oct 16 06:35:19 UTC 2026
+ec2-user
+ip-10-0-1-239.ap-northeast-2.compute.internal
+active
+HTTP/1.1 200 OK
+Server: nginx/1.30.5
+Date: Fri, 16 Oct 2026 06:35:19 GMT
+Content-Type: text/plain
+Content-Length: 12
+Connection: keep-alive
+
+Hello Cloud
+HTTP/1.1 200 OK
+Server: nginx/1.30.5
+Date: Fri, 16 Oct 2026 06:35:19 GMT
+Content-Type: text/plain
+Content-Length: 3
+Connection: keep-alive
+
+OK
+HTTP/2 200 
+date: Fri, 16 Oct 2026 06:35:19 GMT
+content-type: text/html; charset=utf-8
+server: cloudflare
+last-modified: Tue, 13 Oct 2026 22:05:48 GMT
+allow: GET, HEAD
+accept-ranges: bytes
+age: 8224
+cf-cache-status: HIT
+cf-ray: a4b50af5cf75aa78-ICN
+alt-svc: h3=":443"; ma=86400
+

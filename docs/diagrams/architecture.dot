@@ -5,7 +5,7 @@ digraph Architecture {
     label=<
       <TABLE BORDER="0" CELLBORDER="0" CELLPADDING="4">
         <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="24">AWS EC2 웹 서비스 배포</FONT></TD></TR>
-        <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="16">서울 리전 · 외부 접속 검증 당시 구성 · 2026-10-15</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="16">서울 리전 · 평가용 재배포 · 2026-10-16</FONT></TD></TR>
         <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="10" COLOR="#51647a">실선: 통신·연결 / 점선: 경로 설정·보안 적용 범위 · Security Group은 EC2에 적용하는 통신 규칙</FONT></TD></TR>
       </TABLE>
     >,
@@ -15,7 +15,7 @@ digraph Architecture {
     color="#bbcbdc", fillcolor=white, fontcolor="#152b45", margin="0.22,0.18", penwidth=1.4];
   edge [fontname="Noto Sans CJK KR", fontsize=10, color="#2478ad", fontcolor="#235676", penwidth=2, arrowsize=0.8];
 
-  client [label="외부 사용자\n로컬 PC · curl\nGET http://52.79.233.23/health", fillcolor="#e8f3fb", color="#2478ad"];
+  client [label="외부 사용자\n로컬 PC · curl\nGET http://54.180.96.168/health", fillcolor="#e8f3fb", color="#2478ad"];
   admin [label="학습자 PC\nSSH 개인 키 보관\n접속 소스: 학습자 공인 IP /32", fillcolor="#fff3e4", color="#c28533"];
 
   subgraph cluster_region {
@@ -23,25 +23,25 @@ digraph Architecture {
     style="rounded,filled"; color="#b9cde0"; fillcolor="#eef3f9"; penwidth=1.5; margin=24;
 
     subgraph cluster_vpc {
-      label="VPC · 10.0.0.0/16\nvpc-02da8a937c3799359"; fontsize=15;
+      label="VPC · 10.0.0.0/16\nvpc-0c3c0e059bd61e85e"; fontsize=15;
       style="rounded,filled"; color="#5f8fb7"; fillcolor="#ffffff"; penwidth=1.6; margin=24;
 
-      igw [label="Internet Gateway\nigw-071f5b0ea58be0c33\nVPC 연결 · 인터넷 출입 경로", fillcolor="#e8f3fb", color="#2478ad"];
-      routes [label="Public Route Table\nrtb-06bc2d70e1478de6d\n10.0.0.0/16 → local\n0.0.0.0/0 → Internet Gateway\nSubnet 연결: associated", fillcolor="#f1edfb", color="#8e79b2"];
+      igw [label="Internet Gateway\nigw-02d48cd6b6b46bd3c\nVPC 연결 · 인터넷 출입 경로", fillcolor="#e8f3fb", color="#2478ad"];
+      routes [label="Public Route Table\nrtb-0a353ca4943b177b6\n10.0.0.0/16 → local\n0.0.0.0/0 → Internet Gateway\nSubnet 연결: associated", fillcolor="#f1edfb", color="#8e79b2"];
       {rank=same; igw; routes;}
 
       subgraph cluster_subnet {
-        label="Public Subnet · 10.0.1.0/24 · ap-northeast-2c\nsubnet-0994c241f09fecbb1"; fontsize=14;
+        label="Public Subnet · 10.0.1.0/24 · ap-northeast-2c\nsubnet-00f709c7a6e5b3b3e"; fontsize=14;
         style="rounded,filled"; color="#63a890"; fillcolor="#f2faf6"; margin=22;
 
         subgraph cluster_sg {
-          label="Security Group · sg-027c54d832f751fd6\nInbound: TCP 80 ← 0.0.0.0/0  |  TCP 22 ← 학습자 IP /32\nOutbound: 전체 → 0.0.0.0/0";
+          label="Security Group · sg-0a50708191321b557\nInbound: TCP 80 ← 0.0.0.0/0  |  TCP 22 ← 학습자 IP /32\nOutbound: 전체 → 0.0.0.0/0";
           fontsize=12; style="rounded,dashed"; color="#369b83"; penwidth=1.6; margin=22;
-          ec2 [label="EC2 · Nginx\ni-0e9ec3bf1dddb9edf\nAmazon Linux 2023 · t3.micro\nPublic IPv4: 52.79.233.23\nPrivate IPv4: 10.0.1.80\nGET /health → 200 OK · OK", fillcolor="#ffffff", color="#369b83", penwidth=2];
+          ec2 [label="EC2 · Nginx\ni-0fcd16407d5f5ede8\nAmazon Linux 2023 · t3.micro\nPublic IPv4: 54.180.96.168\nPrivate IPv4: 10.0.1.239\nGET /health → 200 OK · OK", fillcolor="#ffffff", color="#369b83", penwidth=2];
         }
       }
 
-      ebs [label="EBS 루트 볼륨\nvol-0a6a1d56710174f89\ngp3 · 8GiB\n인스턴스 종료 시 삭제", fillcolor="#fff4e5", color="#c38a3a"];
+      ebs [label="EBS 루트 볼륨\nvol-0975c0d2343cddc9a\ngp3 · 8GiB\n인스턴스 종료 시 삭제", fillcolor="#fff4e5", color="#c38a3a"];
     }
   }
 

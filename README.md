@@ -1,8 +1,8 @@
 # AWS EC2 웹 서비스 배포 실습
 
-서울 리전에 VPC와 Public Subnet을 구성하고 EC2에 Nginx 웹 서버를 배포했다. 외부 PC에서 `/health`에 요청해 **HTTP 200과 본문 `OK`**를 확인했다.
+2026-10-16 평가를 위해 서울 리전에 VPC와 Public Subnet을 구성하고 EC2에 Nginx 웹 서버를 다시 배포했다. SSH 접속, 서버 내부 응답, 인터넷 아웃바운드 통신을 확인하고 외부 PC에서 `/health`에 요청해 **HTTP 200과 본문 `OK`**를 확인했다.
 
-**현재 상태: 생성한 실습 리소스 정리 완료.** EC2는 `terminated`, 퍼블릭 IP는 `null`이며 루트 EBS·Route Table·Subnet·Security Group·Internet Gateway·VPC·키페어는 삭제 후 조회 결과가 모두 `[]`다. 항목별 결과는 [정리 체크리스트](docs/cleanup-checklist.md)에 정리했다.
+**현재 상태: 평가용 웹 서버 운영 중 — 2026-10-16 15:37:41 KST 검증 기준.** 접속 URL은 **<http://54.180.96.168/health>**다. 2026-10-15 최초 실습 리소스는 정리했으며, 이번에 새로 생성한 리소스는 평가 종료 후 정리한다. 대상과 이전 정리 결과는 [정리 체크리스트](docs/cleanup-checklist.md)에 기록했다.
 
 ## 제출물
 
@@ -10,6 +10,8 @@
 |---|---|
 | 아키텍처 다이어그램 | [architecture.png](docs/architecture.png) |
 | 외부 접속 스크린샷 | [external-health.png](docs/evidence/external-health.png) |
+| 외부 접속 응답 원문 | [external-health.txt](docs/evidence/external-health.txt) |
+| SSH 접속·서버 내부 검증 기록 | [internal-checks.txt](docs/evidence/internal-checks.txt) |
 | 트러블슈팅 보고서 | [troubleshooting.md](docs/troubleshooting.md) |
 | 리소스 정리 체크리스트 | [cleanup-checklist.md](docs/cleanup-checklist.md) |
 | IAM 정책 | [lab-policy.json](infra/iam/lab-policy.json) |
@@ -17,13 +19,13 @@
 ## 외부 접속 검증
 
 - 선택 방식: **B — `GET /health` 호출**
-- 검증 당시 URL: `http://52.79.233.23/health`
+- 검증 URL: `http://54.180.96.168/health`
 - 실행 위치: EC2 외부의 로컬 PC
-- 응답 헤더의 시각: 2026-10-15 05:33:39 UTC / 14:33:39 KST
+- 응답 헤더의 시각: 2026-10-16 06:37:41 UTC / 15:37:41 KST
 - 결과: `HTTP/1.1 200 OK`, 본문 `OK`
 
 ```bash
-curl -i --connect-timeout 10 http://52.79.233.23/health
+curl -sS -i --connect-timeout 10 --max-time 20 http://54.180.96.168/health
 ```
 
 실제 응답:
@@ -31,7 +33,7 @@ curl -i --connect-timeout 10 http://52.79.233.23/health
 ```http
 HTTP/1.1 200 OK
 Server: nginx/1.30.5
-Date: Thu, 15 Oct 2026 05:33:39 GMT
+Date: Fri, 16 Oct 2026 06:37:41 GMT
 Content-Type: text/plain
 Content-Length: 3
 Connection: keep-alive
@@ -41,7 +43,7 @@ OK
 
 ![로컬 PC에서 퍼블릭 IP의 health 경로에 접속해 HTTP 200과 OK를 받은 터미널 화면](docs/evidence/external-health.png)
 
-위 주소는 검증 당시 EC2에 할당된 퍼블릭 IP다. EC2 종료 후 주소가 반환되어 현재 실습 서비스의 접속 주소로 사용하면 안 된다. 이후 다른 리소스에 재할당될 수 있다.
+위 주소는 이번 평가용 EC2에 자동 할당된 퍼블릭 IPv4다. 평가 종료 후 EC2를 삭제하면 주소가 반환되므로, 리소스 정리 후에는 접속 주소로 사용하지 않는다.
 
 ## 아키텍처와 요청 흐름
 
@@ -57,27 +59,28 @@ VPC는 분리된 네트워크 범위, Subnet은 그 안의 IP 구역이다. Rout
 
 ## 배포 구성
 
-아래는 배포 당시 구성과 정리 후 조회 결과다.
+아래는 2026-10-16 평가용 재배포의 조회 결과다.
 
 | 구성 요소 | 값 |
 |---|---|
 | 리전 / 가용 영역 | `ap-northeast-2` / `ap-northeast-2c` |
-| VPC | `vpc-02da8a937c3799359` · `10.0.0.0/16` · 삭제 확인 |
-| Public Subnet | `subnet-0994c241f09fecbb1` · `10.0.1.0/24` · 삭제 확인 |
-| Internet Gateway | `igw-071f5b0ea58be0c33` · 삭제 확인 |
-| Route Table | `rtb-06bc2d70e1478de6d` · 삭제 확인 |
-| Route Table 연결 | `rtbassoc-0233fcaadb0d0a795` · 배포 당시 `associated`, 연결 대상 삭제 확인 |
-| Security Group | `sg-027c54d832f751fd6` · 삭제 확인 |
-| EC2 | `i-0e9ec3bf1dddb9edf` · 종료 후 `terminated` |
-| 배포 당시 퍼블릭 / 사설 IPv4 | `52.79.233.23` / `10.0.1.80` · 종료 후 `PublicIp: null` |
+| VPC | `vpc-0c3c0e059bd61e85e` · `10.0.0.0/16` |
+| Public Subnet | `subnet-00f709c7a6e5b3b3e` · `10.0.1.0/24` · `available` |
+| Internet Gateway | `igw-02d48cd6b6b46bd3c` |
+| Route Table | `rtb-0a353ca4943b177b6` · 인터넷 경로 `active` |
+| Route Table 연결 | `rtbassoc-024a91303aba8e958` · `associated` |
+| Security Group | `sg-0a50708191321b557` |
+| EC2 | `i-0fcd16407d5f5ede8` · `running` |
+| 퍼블릭 / 사설 IPv4 | `54.180.96.168` / `10.0.1.239` |
 | 선택한 인스턴스 유형 | `t3.micro` · 2 vCPU · 1,024MiB 메모리 |
-| 선택한 AMI | `ami-0c9c7f8c2c9ca580b` |
-| AMI 이름 | `al2023-ami-2023.12.20261013.0-kernel-6.12-x86_64` |
-| EBS 볼륨 | `vol-0a6a1d56710174f89` · 삭제 확인 |
-| 키페어 | `codyssey-lab` · RSA · `key-0f8f3fb1511d18c5b` · AWS 등록 삭제 확인 |
+| 선택한 AMI | `ami-0e716cbef3b043b93` |
+| AMI 이름 | `al2023-ami-2023.12.20261014.0-kernel-6.18-x86_64` |
+| EBS 볼륨 | `vol-0975c0d2343cddc9a` · `DeleteOnTermination: true` |
+| 키페어 | `codyssey-eval` · RSA · `key-0e93a99ca48f480b9` |
+| 메타데이터 접근 | `HttpTokens: required` · IMDSv2 필수 |
 | 웹 서버 | 응답 헤더 기준 `nginx/1.30.5` |
 
-생성 명령에는 EBS `gp3` 8GiB, `DeleteOnTermination=true`, CPU 크레딧 `standard`, IMDSv2 필수를 지정했다. 저장된 EC2 조회 출력에는 이 상세 설정이 포함되지 않았으며, 현재 EC2와 볼륨은 정리됐다. 인스턴스 유형 조회의 `FreeTierEligible=true`는 실제 청구 금액을 나타내지 않는다. Billing 조회는 결제 조회 권한 부족으로 제한됐으며, 비용·크레딧 내역은 미기록이다.
+생성 명령에는 EBS `gp3` 8GiB, `DeleteOnTermination=true`, CPU 크레딧 `standard`, IMDSv2 필수를 지정했다. EC2 조회 결과에서 연결된 볼륨의 `DeleteOnTermination: true`와 메타데이터의 `HttpTokens: required`를 확인했다. EBS 유형·용량과 CPU 크레딧 모드의 별도 조회 결과는 미기록이다. 인스턴스 유형 조회의 `FreeTierEligible=true`는 실제 청구 금액을 나타내지 않는다. Billing 조회는 결제 조회 권한 부족으로 제한됐으며, 비용·크레딧 내역은 미기록이다.
 
 ## 접근 제어와 IAM
 
@@ -104,34 +107,32 @@ Security Group은 서버로 오가는 네트워크 통신을 제어한다. IAM�
 |---|---|
 | VPC와 Public Subnet 구성 | 리소스 ID와 라우팅 조회 결과 |
 | IGW 경로와 Subnet 연결 | 인터넷 경로 `active`, 연결 `associated` 확인 |
-| EC2와 키페어 | 배포 당시 `running`과 키페어 RSA 등록 확인, 현재 EC2 종료 및 키페어 등록 삭제 확인 |
+| EC2와 키페어 | `running`, `codyssey-eval` RSA 등록 및 EC2의 키페어 이름 확인 |
 | HTTP 공개와 SSH 소스 제한 | 보안 그룹 조회 결과 확인 |
-| Nginx 외부 응답 | 외부 `/health` 200 및 스크린샷 확보 |
-| SSH 접속, 내부 `/` 200, 인터넷 아웃바운드 | 종료 전 실행 결과 보완 필요 · 해당 서버 재검증 불가 |
+| Nginx 외부 응답 | 외부 `/health` 200 및 응답 원문·스크린샷 확보 |
+| SSH 접속, 내부 `/` 200, 인터넷 아웃바운드 | `ec2-user` 접속, Nginx `active`, 내부 `/`·`/health` 200, 외부 HTTPS 200 확인 |
 | IAM 최소권한 | 정책 파일 및 인증 설정 완료, 최종 연결 정책 목록 미기록 |
-| 리소스 정리 | EC2 `terminated`, `PublicIp: null` · 루트 EBS·네트워크 리소스·키페어 조회 `[]` |
+| 리소스 정리 | 최초 실습 리소스 정리 완료 · 현재 평가용 리소스는 평가 종료 후 정리 예정 |
 | Billing 확인 (권장) | 결제 조회 권한 부족 · 청구 금액·크레딧 내역 미기록 |
 
-### 서버 내부 검증 결과 보완
+### 서버 내부 검증
 
-EC2가 이미 종료되어 해당 서버에 다시 접속할 수 없다. 아래는 종료 전에 안내한 검증 명령이다. 당시 저장한 출력이나 스크린샷이 있다면 이를 추가한다. 예상값은 성공 판정 기준이며 실제 결과를 대신하지 않는다.
+2026-10-16 06:35:19 UTC / 15:35:19 KST에 SSH로 접속한 EC2에서 확인했다. 원문은 [내부 검증 기록](docs/evidence/internal-checks.txt)에 저장했다.
 
-```bash
-date -u
-whoami
-systemctl is-active nginx
-curl -i --connect-timeout 10 http://localhost
-curl -i --connect-timeout 10 http://localhost/health
-curl -I --connect-timeout 10 https://example.com
-```
-
-`whoami`는 `ec2-user`, Nginx는 `active`, 내부 `/`와 `/health`는 200, 외부 HTTPS 요청은 정상 HTTP 응답인지 확인한다. 출력은 `docs/evidence/internal-checks.txt`로 저장하고 위 상태 표를 갱신한다. 개인 키나 인증 토큰은 기록하지 않는다.
+| 검증 항목 | 실제 결과 |
+|---|---|
+| `whoami` | `ec2-user` |
+| `hostname` | `ip-10-0-1-239.ap-northeast-2.compute.internal` |
+| `systemctl is-active nginx` | `active` |
+| `GET http://localhost/` | `HTTP/1.1 200 OK` · 본문 `Hello Cloud` |
+| `GET http://localhost/health` | `HTTP/1.1 200 OK` · 본문 `OK` |
+| `HEAD https://example.com` | `HTTP/2 200` · 인터넷 아웃바운드 통신 확인 |
 
 ## 트러블슈팅과 정리
 
-실제 발생한 `--query` 식별자 줄바꿈 오류를 [트러블슈팅 보고서](docs/troubleshooting.md)에 기록했다. 오류 메시지 분석, 필드명 수정, 재조회 성공까지 포함한다.
+2026-10-15 최초 배포에서 발생한 `--query` 식별자 줄바꿈 오류를 [트러블슈팅 보고서](docs/troubleshooting.md)에 기록했다. 오류 메시지 분석, 필드명 수정, 당시 인스턴스의 재조회 성공까지 포함한다.
 
-정리 결과의 범위는 위에 식별자를 기록한 서울 리전의 실습 리소스다. 추가 미사용 EBS·Elastic IP의 개별 조회 결과와 Billing 상세 내역은 미기록이다. NAT Gateway·ELB/ALB·RDS는 본 실습 구성에 포함되지 않는다.
+최초 실습의 삭제 결과와 현재 평가용 리소스의 정리 대상은 [정리 체크리스트](docs/cleanup-checklist.md)에 구분했다. 이번 평가용 EC2·EBS·네트워크 리소스·키페어는 평가 종료 후 정리하고 결과를 기록한다. NAT Gateway·ELB/ALB·RDS는 본 실습 구성에 포함되지 않는다.
 
 HTTPS와 Docker 보너스는 이번 제출 범위에 포함하지 않았다.
 
